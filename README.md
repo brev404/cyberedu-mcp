@@ -159,12 +159,15 @@ The server can be run directly (for testing):
 
 **macOS/Linux:**
 ```bash
+python3 -m venv venv
+
 source venv/bin/activate
 python -m cyberedu_mcp
 ```
 
 **Windows:**
 ```powershell
+python -m venv venv
 .\venv\Scripts\Activate.ps1
 python -m cyberedu_mcp
 ```
