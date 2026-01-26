@@ -1,0 +1,3 @@
+[submodule "cyberedu-client"]
+	path = cyberedu-client
+	url = https://github.com/CyberEDU-Cyber-Range/cyberedu-client.git
