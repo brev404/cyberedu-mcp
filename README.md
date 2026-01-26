@@ -390,20 +390,6 @@ Additional documentation is available in the `docs/` folder:
 - **[docs/architecture.md](docs/architecture.md)** - Server design, tool discovery, and session management
 - **[docs/extending.md](docs/extending.md)** - How to add custom tools and modify behavior
 
-## Development
-
-### Running Tests
-
-```bash
-pytest
-```
-
-### Code Formatting
-
-```bash
-black .
-ruff check .
-```
 
 ## License
 
