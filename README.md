@@ -85,28 +85,30 @@ Install both packages (client and MCP server):
 ```bash
 python3 -m venv venv  
 source venv/bin/activate
-
-pip install -e ./cyberedu-client
-pip install -e .
+pip install -e ".[local]"      # Installs with local cyberedu-client submodule
+# Or for development:
+# pip install -e ".[local,dev]"
 ```
 
 **Windows (PowerShell):**
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-
-pip install -e ./cyberedu-client
-pip install -e .
+pip install -e ".[local]"      # Installs with local cyberedu-client submodule
 ```
 
 **Windows (Command Prompt):**
 ```cmd
 python -m venv venv
 venv\Scripts\activate.bat
-
-pip install -e ./cyberedu-client
-pip install -e .
+pip install -e ".[local]"
 ```
+
+> **Alternative**: Install packages separately:
+> ```bash
+> pip install -e ./cyberedu-client
+> pip install -e .
+> ```
 
 ## Configuration
 

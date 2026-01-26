@@ -23,17 +23,25 @@ git submodule update --init --recursive
 ```bash
 python3 -m venv venv  
 source venv/bin/activate
-pip install -e ./cyberedu-client
-pip install -e .
+pip install -e ".[local]"      # Installs with local cyberedu-client submodule
+# Or for development:
+# pip install -e ".[local,dev]"
 ```
 
 **Windows (PowerShell):**
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install -e ./cyberedu-client
-pip install -e .
+pip install -e ".[local]"      # Installs with local cyberedu-client submodule
+# Or for development:
+# pip install -e ".[local,dev]"
 ```
+
+> **Note**: The `[local]` extra installs `cyberedu-client` from the local submodule. Alternatively, you can install them separately:
+> ```bash
+> pip install -e ./cyberedu-client
+> pip install -e .
+> ```
 
 ## Configuration
 
