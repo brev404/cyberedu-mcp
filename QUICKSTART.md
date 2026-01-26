@@ -19,13 +19,19 @@ git submodule update --init --recursive
 
 ### Install Packages
 
+**macOS/Linux:**
 ```bash
 python3 -m venv venv  
 source venv/bin/activate
-# Install the client (submodule)
 pip install -e ./cyberedu-client
+pip install -e .
+```
 
-# Install the MCP server
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -e ./cyberedu-client
 pip install -e .
 ```
 
@@ -33,7 +39,11 @@ pip install -e .
 
 ### Option 1: Session Persistence (Recommended)
 
-No configuration needed! Once the server is running, use the `cyberedu_set_session_cookie` tool to authenticate. Your credentials are saved to `~/.cyberedu-mcp/session.json` and persist across sessions.
+No configuration needed! Once the server is running, use the `cyberedu_set_session_cookie` tool to authenticate. Your credentials are saved and persist across sessions.
+
+**Session file location:**
+- macOS/Linux: `~/.cyberedu-mcp/session.json`
+- Windows: `%USERPROFILE%\.cyberedu-mcp\session.json`
 
 ### Option 2: Environment Variables
 
@@ -70,12 +80,26 @@ Cursor supports MCP servers through its settings. To configure the CyberEdu MCP 
 
    **Important**: Use the full path to the Python executable in your venv. Cursor runs MCP servers externally and won't have access to an activated virtual environment.
 
-3. **Example MCP Configuration** (`~/.cursor/mcp.json`):
+3. **Example MCP Configuration**:
+   
+   macOS/Linux (`~/.cursor/mcp.json`):
    ```json
    {
      "mcpServers": {
        "cyberedu": {
          "command": "/path/to/cyberedu-mcp/venv/bin/python3",
+         "args": ["-m", "cyberedu_mcp"]
+       }
+     }
+   }
+   ```
+   
+   Windows (`%APPDATA%\Cursor\User\mcp.json`):
+   ```json
+   {
+     "mcpServers": {
+       "cyberedu": {
+         "command": "C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe",
          "args": ["-m", "cyberedu_mcp"]
        }
      }
@@ -98,8 +122,7 @@ Cursor supports MCP servers through its settings. To configure the CyberEdu MCP 
 
 ### Claude Desktop
 
-Add to your MCP configuration file (usually `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
-
+**macOS** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
@@ -111,9 +134,21 @@ Add to your MCP configuration file (usually `~/Library/Application Support/Claud
 }
 ```
 
+**Windows** (`%APPDATA%\Claude\claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "cyberedu": {
+      "command": "C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe",
+      "args": ["-m", "cyberedu_mcp"]
+    }
+  }
+}
+```
+
 ### VS Code
 
-Add to `.vscode/mcp.json` in your workspace (or configure globally in VS Code settings):
+Add to `.vscode/mcp.json` in your workspace:
 
 ```json
 {
@@ -126,6 +161,7 @@ Add to `.vscode/mcp.json` in your workspace (or configure globally in VS Code se
   }
 }
 ```
+*Windows: Use `C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe`*
 
 ### Antigravity / Windsurf
 
@@ -142,8 +178,7 @@ Access via MCP store → Manage MCP Servers → View raw config, then add to `mc
   }
 }
 ```
-
-**Note**: Use the full path to the Python executable in your venv.
+*Windows: Use `C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe`*
 
 ## Available Tools
 
@@ -194,26 +229,52 @@ What's my CyberEdu session status?
 ### MCP Server Not Appearing in Cursor
 
 1. **Verify Installation**: Make sure both packages are installed in the venv:
+   
+   macOS/Linux:
    ```bash
    cd cyberedu-mcp
    source venv/bin/activate
    pip install -e ./cyberedu-client
    pip install -e .
    ```
+   
+   Windows:
+   ```powershell
+   cd cyberedu-mcp
+   .\venv\Scripts\Activate.ps1
+   pip install -e ./cyberedu-client
+   pip install -e .
+   ```
 
 2. **Check Python Path**: Use the full path to the venv Python in Cursor's MCP config:
+   
+   macOS/Linux:
    ```bash
-   # Find your venv Python path
    echo "$(pwd)/venv/bin/python3"
+   ```
+   
+   Windows (PowerShell):
+   ```powershell
+   Write-Output "$PWD\venv\Scripts\python.exe"
    ```
 
 3. **Test Server Manually**: Run the server directly to check for errors:
+   
+   macOS/Linux:
    ```bash
    source venv/bin/activate
    python -m cyberedu_mcp
    ```
+   
+   Windows:
+   ```powershell
+   .\venv\Scripts\Activate.ps1
+   python -m cyberedu_mcp
+   ```
 
-4. **Verify MCP Config**: Check your `~/.cursor/mcp.json` uses the correct venv path.
+4. **Verify MCP Config**: Check your MCP config uses the correct venv path:
+   - macOS/Linux: `~/.cursor/mcp.json`
+   - Windows: `%APPDATA%\Cursor\User\mcp.json`
 
 ### Session Cookie Expired
 

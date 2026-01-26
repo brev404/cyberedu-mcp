@@ -2,15 +2,21 @@
 Session persistence for CyberEdu MCP Server.
 
 Stores session state (cookie, tenant) to disk so it persists across MCP sessions.
-The state is saved to ~/.cyberedu-mcp/session.json
+The state is saved to:
+- Unix/macOS: ~/.cyberedu-mcp/session.json
+- Windows: %USERPROFILE%\\.cyberedu-mcp\\session.json
 """
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 # Default location for session storage
+# Path.home() works cross-platform:
+# - Unix/macOS: /home/user or /Users/user
+# - Windows: C:\\Users\\username
 DEFAULT_SESSION_DIR = Path.home() / ".cyberedu-mcp"
 DEFAULT_SESSION_FILE = DEFAULT_SESSION_DIR / "session.json"
 
@@ -75,7 +81,9 @@ class SessionStore:
             with open(self.session_file, "w", encoding="utf-8") as f:
                 json.dump(state, f, indent=2)
             # Set restrictive permissions (owner read/write only) for security
-            os.chmod(self.session_file, 0o600)
+            # On Windows, os.chmod only supports read-only flag, so we skip it
+            if sys.platform != "win32":
+                os.chmod(self.session_file, 0o600)
             return True
         except (IOError, OSError):
             return False

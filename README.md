@@ -81,14 +81,30 @@ git submodule update --init --recursive
 
 Install both packages (client and MCP server):
 
+**macOS/Linux:**
 ```bash
-# Install the client (submodule)
 python3 -m venv venv  
 source venv/bin/activate
 
 pip install -e ./cyberedu-client
+pip install -e .
+```
 
-# Install the MCP server
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+pip install -e ./cyberedu-client
+pip install -e .
+```
+
+**Windows (Command Prompt):**
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+
+pip install -e ./cyberedu-client
 pip install -e .
 ```
 
@@ -96,13 +112,17 @@ pip install -e .
 
 ### Session Persistence (Recommended)
 
-The MCP server automatically persists session credentials to disk at `~/.cyberedu-mcp/session.json`. This means:
+The MCP server automatically persists session credentials to disk. This means:
 
 - **Set your cookie once** using the `cyberedu_set_session_cookie` tool, and it will be remembered across MCP sessions
 - **No environment variables needed** after the first authentication
 - **Tenant selection is preserved** when you switch tenants
 
-The file has restricted permissions (owner read/write only) for security.
+**Session file location:**
+- macOS/Linux: `~/.cyberedu-mcp/session.json`
+- Windows: `%USERPROFILE%\.cyberedu-mcp\session.json` (e.g., `C:\Users\YourName\.cyberedu-mcp\session.json`)
+
+The file has restricted permissions (owner read/write only) for security on Unix systems.
 
 ### Environment Variables (Alternative)
 
@@ -137,8 +157,15 @@ Environment variables:
 
 The server can be run directly (for testing):
 
+**macOS/Linux:**
 ```bash
 source venv/bin/activate
+python -m cyberedu_mcp
+```
+
+**Windows:**
+```powershell
+.\venv\Scripts\Activate.ps1
 python -m cyberedu_mcp
 ```
 
@@ -147,6 +174,8 @@ python -m cyberedu_mcp
 To use this server with an MCP client (Cursor IDE or Claude Desktop), add it to your MCP configuration.
 
 **Important**: Use the full path to the Python executable in your venv. MCP clients run servers externally and won't have access to an activated virtual environment.
+
+#### macOS/Linux Examples
 
 **Cursor IDE** (`~/.cursor/mcp.json`):
 ```json
@@ -172,7 +201,35 @@ To use this server with an MCP client (Cursor IDE or Claude Desktop), add it to 
 }
 ```
 
-**VS Code** (`.vscode/mcp.json` in your workspace, or global settings):
+#### Windows Examples
+
+**Cursor IDE** (`%APPDATA%\Cursor\User\mcp.json` or `C:\Users\YourName\.cursor\mcp.json`):
+```json
+{
+  "mcpServers": {
+    "cyberedu": {
+      "command": "C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe",
+      "args": ["-m", "cyberedu_mcp"]
+    }
+  }
+}
+```
+
+**Claude Desktop** (`%APPDATA%\Claude\claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "cyberedu": {
+      "command": "C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe",
+      "args": ["-m", "cyberedu_mcp"]
+    }
+  }
+}
+```
+
+#### Cross-Platform Examples
+
+**VS Code** (`.vscode/mcp.json` in your workspace):
 ```json
 {
   "servers": {
@@ -184,6 +241,7 @@ To use this server with an MCP client (Cursor IDE or Claude Desktop), add it to 
   }
 }
 ```
+*Windows: Use `C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe`*
 
 **Antigravity / Windsurf** (`mcp_config.json` - access via MCP store → Manage MCP Servers → View raw config):
 ```json
@@ -197,6 +255,7 @@ To use this server with an MCP client (Cursor IDE or Claude Desktop), add it to 
   }
 }
 ```
+*Windows: Use `C:\\path\\to\\cyberedu-mcp\\venv\\Scripts\\python.exe`*
 
 **Note**: Session credentials are persisted to `~/.cyberedu-mcp/session.json`, so no environment variables are needed after the first authentication via the `cyberedu_set_session_cookie` tool.
 
