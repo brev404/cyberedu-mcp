@@ -1,6 +1,6 @@
 # CyberEdu MCP Server
 
-This is the Oficial Model Context Protocol (MCP) server for the CyberEdu CTF platform (cyber-edu.co / cyberedu.ro). This server automatically discovers and exposes all methods from the `CyberEduClient` as MCP tools, making it easy to interact with the CyberEdu platform through MCP-compatible clients.
+This is the Oficial Model Context Protocol (MCP) server for the CyberEdu CTF platform ([https://cyber-edu.co](https://cyber-edu.co) / [https://cyberedu.ro](https://cyberedu.ro)). This server automatically discovers and exposes all methods from the `CyberEduClient` as MCP tools, making it easy to interact with the CyberEdu platform through MCP-compatible clients.
 
 ## Features
 
@@ -8,6 +8,57 @@ This is the Oficial Model Context Protocol (MCP) server for the CyberEdu CTF pla
 - **Zero Configuration for New Methods**: When new methods are added to `CyberEduClient`, they automatically become available as MCP tools without any code changes
 - **Type-Safe**: Automatically generates JSON schemas from method signatures and type hints
 - **Error Handling**: Comprehensive error handling with detailed error messages
+
+## CyberEDU Platform Overview
+
+CyberEDU is a cybersecurity training platform that provides hands-on labs, realistic simulations, and competitive environments. It’s designed for enterprise security teams, academic institutions, government agencies, and
+individual learners.
+
+### Core Description
+
+CyberEDU is a comprehensive cybersecurity training platform that provides hands-on labs, realistic simulations, and competitive environments. It's designed for enterprise security teams, academic institutions, government 
+agencies, and individual learners who want to develop practical cybersecurity skills through real-world scenarios.
+
+### Key Differentiators
+
+- Hands-on approach: Interactive cyber ranges where users attack and defend real infrastructure (not just videos or theory)
+- MITRE ATT&CK mapping: Scenarios mapped to MITRE ATT&CK, using real malware samples (safely contained)
+- Better retention: 3.5x better skill retention compared to passive learning
+- Real-world scenarios: Simulates actual adversary techniques and attack patterns
+
+
+### Platform Components
+
+1. Cyber Range — Enterprise-scale cyber warfare simulation with complex network topologies
+2. Cyber Labs — 650+ hands-on labs mapped to MITRE ATT&CK, browser-based and auto-graded
+3. Tournament Suite — Gamified competitions (CTFs, Red vs Blue, war games)
+
+
+### Key Statistics
+
+- 30,000+ active users worldwide
+- 650+ hands-on labs
+- 1,400+ simulation profiles
+- 500+ events hosted
+- 45+ countries served
+- 250+ hours of training content
+
+
+### Target Audiences
+
+- Students: Career-focused training with CTF challenges and leaderboards
+- Academia: Curriculum with LMS integration and auto-grading
+- Enterprise: Technical hiring assessments, team training, compliance mapping
+- Government: Air-gapped deployments, OT/SCADA simulation, critical infrastructure defense
+
+
+### Deployment Options
+
+- Cloud-hosted SaaS (browser-based, no installation)
+- On-premise (VMware, Proxmox, bare-metal)
+- Air-gapped deployments for classified environments
+
+
 
 ## Installation
 
