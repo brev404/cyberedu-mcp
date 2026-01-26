@@ -329,6 +329,46 @@ These tools allow you to manage authentication and tenant switching without rest
 - `cyberedu_extend_contest_service` - Extend service time within a contest
 - `cyberedu_restart_contest_service` - Restart service within a contest
 
+## Usage Examples & Prompts
+
+Example prompts for interacting with the CyberEdu MCP server:
+
+### Session & Authentication
+```
+"Check my CyberEdu session status"
+"Set my CyberEdu session cookie to eyJpdiI6Ik..."
+"Switch to tenant 'mycompany'"
+```
+
+### Challenges (Archive)
+```
+"List all web security challenges"
+"Show me the easiest challenges from tenant unbreakable/rocsc"
+"Show me hard difficulty forensics challenges"
+"Get details for challenge abc123"
+"Subscribe me to this challenge and start the service"
+"Download challenge files to ./downloads/"
+"Submit flag 'CTF{i-like-web-security-ctf-challenges}' for this challenge"
+```
+
+### Contests
+```
+"List available CTF contests"
+"Show leaderboard for contest 'defcamp ctf quals 2025'"
+"Get challenge abc123 from contest 'rocsc26-quals'"
+"Start service for this contest challenge"
+"Submit flag 'FLAG{solved}' for contest challenge"
+```
+
+### Workflow Example
+```
+1. "List easy web challenges from tenant rocsc"
+2. "Subscribe to 'why-xor' and start the service"
+3. "Download the challenge files"
+4. [Solve...]
+5. "Submit flag 'CTF{xor-is-not-safe}'"
+```
+
 ## Architecture
 
 ### Dynamic Tool Discovery
