@@ -266,7 +266,7 @@ To use this server with an MCP client (Cursor IDE or Claude Desktop), add it to 
 
 ## Available Tools
 
-The server automatically exposes all public methods from `CyberEduClient` as MCP tools. Tools are prefixed with `cyberedu_` to avoid naming conflicts.
+The server automatically exposes all public methods from [https://cyber-edu.co](https://github.com/CyberEDU-Cyber-Range/cyberedu-client.git)](CyberEduClient) as MCP tools. Tools are prefixed with `cyberedu_` to avoid naming conflicts.
 
 ### Session Management Tools
 These tools allow you to manage authentication and tenant switching without restarting the MCP server. Credentials are automatically persisted to `~/.cyberedu-mcp/session.json`:
@@ -373,7 +373,7 @@ Example prompts for interacting with the CyberEdu MCP server:
 
 ### Dynamic Tool Discovery
 
-The server uses Python's `inspect` module to automatically discover all public methods from the `CyberEduClient` class. For each method:
+The server uses Python's `inspect` module to automatically discover all public methods from the [https://cyber-edu.co](https://github.com/CyberEDU-Cyber-Range/cyberedu-client.git)](CyberEduClient) class. For each method:
 
 1. **Method Discovery**: Scans the class for public methods (excluding private methods and helpers)
 2. **Schema Generation**: Automatically generates JSON schema from method signatures and type hints
@@ -391,7 +391,7 @@ The `ToolRegistry` class provides a flexible system for managing tools:
 
 To add new functionality:
 
-1. **Add methods to CyberEduClient**: Simply add new public methods to the `CyberEduClient` class
+1. **Add methods to CyberEduClient**: Simply add new public methods to the [https://cyber-edu.co](https://github.com/CyberEDU-Cyber-Range/cyberedu-client.git)](CyberEduClient) class
 2. **Automatic Exposure**: The MCP server will automatically discover and expose the new methods
 3. **No MCP Code Changes**: No changes needed to the MCP server code
 
