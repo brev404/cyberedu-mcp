@@ -55,16 +55,42 @@ ALWAYS call `cyberedu_get_session_status` FIRST before using any other CyberEdu 
 If not authenticated, ask the user for their session cookie and use `cyberedu_set_session_cookie`.
 The session cookie can be obtained from browser dev tools after logging into https://app.cyber-edu.co
 
+## Session Expired (401/403 errors)
+When any API call returns HTTP 401 or 403, the session cookie has likely expired. Tell the user to:
+1. Log in again at https://app.cyber-edu.co
+2. Open Developer Tools (F12) > Application > Cookies > cyberedu_session
+3. Copy the cookie value and provide it to you
+4. You then call `cyberedu_set_session_cookie` with the new value
+
 Session credentials are persisted to disk, so once set, they will be available in future sessions.
 
 ## Common Workflows
 
 ### Exploring Challenges (Educational Archive)
 1. `cyberedu_list_challenges` - Browse all available challenges (can filter by category/difficulty)
-2. `cyberedu_get_challenge` - Get details including description, files, and flags
-3. `cyberedu_download_file` - Download challenge files (use `save_path` param to save to disk)
-4. `cyberedu_start_service` - Start the challenge instance if it requires a running service
-5. `cyberedu_submit_flag` - Submit your solution
+2. `cyberedu_list_top_challenges` - Get top N most solved/attempted challenges for current tenant.
+   Use for "top 10 solved", leaderboard-style queries. Call cyberedu_switch_tenant first for
+   a specific org (e.g., unbreakable). Params: limit (default 10), sort_by (solves/attempts/points)
+3. `cyberedu_get_challenge` - Get details including description, files, and flags
+4. `cyberedu_download_file` - Download challenge files (use `save_path` param to save to disk)
+5. `cyberedu_start_service` - Start the challenge instance if it requires a running service
+6. `cyberedu_submit_flag` - Submit your solution
+
+### Trainings (Structured Courses)
+Trainings are courses with modules (text, images, files, deployments). Same flow as challenges:
+list → get details → subscribe → download → deployment. Tenant applies: use cyberedu_switch_tenant first.
+1. `cyberedu_list_trainings` - List trainings for current tenant (courses like HeapVault)
+2. `cyberedu_get_training` - Get full training with modules (content_html, media, files, deployment).
+   Accepts training_id (UUID) or slug (e.g. 'heapvault-training').
+3. `cyberedu_subscribe_to_training` - Unlock the training (required before content/deployment)
+4. `cyberedu_download_training_file` - Download module files. file_id comes from module's files/media.
+   Use training_id (UUID), not slug.
+5. `cyberedu_start_training_service` - Start the training deployment (lab instance)
+6. `cyberedu_get_training_service_status` - Check deployment status
+7. `cyberedu_extend_training_service` / `cyberedu_restart_training_service` - Manage deployment
+
+If a module has a challenge_id (in its deployment/challenge field), use cyberedu_start_service
+with that challenge_id for module-level lab instances.
 
 ### Working with Contests/Events
 1. `cyberedu_list_contests` - See available contests
@@ -82,6 +108,12 @@ Session credentials are persisted to disk, so once set, they will be available i
 ### Multi-Tenant Support
 - `cyberedu_list_tenants` - See available organizations
 - `cyberedu_switch_tenant` - Switch to a different organization
+
+**Important Notes on Tenant Behavior:**
+- Use `cyberedu_switch_tenant` first to select organization (e.g., unbreakable, cyberedu)
+- All challenge and training tools use the current tenant
+- Challenge count, solve counts (counts.owned), and tenant field are tenant-specific
+- Training availability varies by tenant (unbreakable often has more; cyberedu may have fewer)
 
 ## Important Notes
 - Challenge IDs and file IDs are UUIDs (e.g., '9fcc0a82-40bb-4073-9bd3-bb993823ab70')
@@ -112,6 +144,14 @@ _session_state = {
 def get_client(require_auth: bool = True) -> CyberEduClient:
     """Get or create the CyberEduClient instance."""
     global _client
+    
+    # Reload session from disk to ensure we use latest persisted tenant/cookie
+    stored = _session_store.load()
+    if stored:
+        if "session_cookie" in stored:
+            _session_state["session_cookie"] = stored["session_cookie"]
+        if "tenant" in stored:
+            _session_state["tenant"] = stored["tenant"]
     
     session_cookie = _session_state.get("session_cookie")
     tenant = _session_state.get("tenant", "cyberedu")
@@ -224,11 +264,16 @@ def get_session_status() -> Dict[str, Any]:
     Returns:
         Current session status including authentication state, tenant, and persistence info
     """
+    # Reload from disk to ensure we report actual persisted state
+    stored = _session_store.load()
+    if stored:
+        if "session_cookie" in stored:
+            _session_state["session_cookie"] = stored["session_cookie"]
+        if "tenant" in stored:
+            _session_state["tenant"] = stored["tenant"]
+    
     has_cookie = bool(_session_state.get("session_cookie"))
     tenant = _session_state.get("tenant", "cyberedu")
-    
-    # Check if we have persisted credentials
-    stored = _session_store.load()
     has_persisted_cookie = bool(stored.get("session_cookie"))
     
     return {
@@ -280,10 +325,10 @@ CUSTOM_TOOLS = {
     "get_session_status": {
         "function": get_session_status,
         "description": (
-            "Check current authentication status and selected tenant. "
-            "ALWAYS call this FIRST before using ANY other CyberEdu tools. "
-            "This verifies authentication and shows which tenant is active. "
-            "Returns: {authenticated: bool, tenant: string, persisted: bool, session_file: string, message: string}"
+            "Check authentication and tenant. ALWAYS call this FIRST before other CyberEdu tools. "
+            "Returns: authenticated (bool), tenant (string), persisted (bool). "
+            "If authenticated=false, use cyberedu_set_session_cookie (user provides cookie from browser). "
+            "If API calls return 401/403 later, session expired - ask user for new cookie, then set_session_cookie."
         ),
         "parameters": {
             "type": "object",
@@ -294,10 +339,10 @@ CUSTOM_TOOLS = {
     "set_session_cookie": {
         "function": set_session_cookie,
         "description": (
-            "Set the session cookie for authentication. Use when not authenticated or session expired. "
-            "The user must provide the cookie value from their browser: "
-            "Developer Tools (F12) > Application > Cookies > cyberedu_session. "
-            "Example: set_session_cookie(session_cookie='eyJpdiI6...')"
+            "Set the session cookie for authentication. Use when: (1) not authenticated, or (2) any API call "
+            "returns 401/403 (session expired). Ask the user to get the cookie from their browser: "
+            "Developer Tools (F12) > Application > Cookies > app.cyber-edu.co > cyberedu_session. "
+            "Then call this with the value. Persists to disk for future sessions."
         ),
         "parameters": {
             "type": "object",
@@ -443,17 +488,40 @@ async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]] = None
         return [TextContent(type="text", text=result_str)]
     
     except httpx.HTTPStatusError as e:
+        status = e.response.status_code
         error_msg = {
             "error": "HTTP Error",
-            "status_code": e.response.status_code,
+            "status_code": status,
             "message": str(e),
             "response": e.response.text[:500] if e.response.text else None
         }
+        if status in (401, 403):
+            error_msg["session_expired"] = True
+            error_msg["remedy"] = (
+                "Session cookie likely expired. Ask user to log in at https://app.cyber-edu.co, "
+                "get cyberedu_session cookie from Developer Tools > Application > Cookies, "
+                "then call cyberedu_set_session_cookie with the new value."
+            )
         return [TextContent(
             type="text",
             text=json.dumps(error_msg, indent=2)
         )]
     
+    except ValueError as e:
+        msg = str(e)
+        error_msg = {
+            "error": "ValueError",
+            "message": msg
+        }
+        if "not authenticated" in msg.lower() or "session" in msg.lower():
+            error_msg["remedy"] = (
+                "Ask user for cyberedu_session cookie from https://app.cyber-edu.co "
+                "(Developer Tools > Application > Cookies), then call cyberedu_set_session_cookie."
+            )
+        return [TextContent(
+            type="text",
+            text=json.dumps(error_msg, indent=2)
+        )]
     except Exception as e:
         error_msg = {
             "error": type(e).__name__,
@@ -467,11 +535,13 @@ async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]] = None
 
 async def main():
     """Main entry point for the MCP server."""
+    init_options = server.create_initialization_options()
+    init_options = init_options.model_copy(update={"instructions": SERVER_INSTRUCTIONS.strip()})
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
             write_stream,
-            server.create_initialization_options()
+            init_options
         )
 
 
