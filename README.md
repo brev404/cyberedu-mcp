@@ -291,6 +291,10 @@ These tools allow you to manage authentication and tenant switching without rest
 
 ### Challenge Tools (Archive)
 - `cyberedu_list_challenges` - List all challenges (with optional filters)
+  - Parameters: `difficulty` (optional), `category` (optional), `tag_filter` (optional)
+- `cyberedu_list_top_challenges` - Get top N most solved/attempted challenges for current tenant
+  - Use for "top 10 solved", leaderboard-style queries. Call `cyberedu_switch_tenant` first for
+    a specific org (e.g., unbreakable). Parameters: `limit` (default 10), `sort_by` (solves/attempts/points)
 - `cyberedu_get_challenge` - Get challenge details
 - `cyberedu_get_challenge_difficulties` - Get available difficulty levels
 - `cyberedu_get_challenge_tags` - Get available challenge tags
@@ -308,6 +312,17 @@ These tools allow you to manage authentication and tenant switching without rest
 - `cyberedu_get_service_status` - Get service status
 - `cyberedu_extend_service` - Extend service time
 - `cyberedu_restart_service` - Restart service
+
+### Training Tools
+Same flow as challenges: list → get details → subscribe → download → deployment.
+- `cyberedu_list_trainings` - List trainings (structured courses) for current tenant
+- `cyberedu_get_training` - Get full training with modules (text, images, deployment info)
+- `cyberedu_subscribe_to_training` - Unlock a training (required before content/deployment)
+- `cyberedu_download_training_file` - Download training/module files (use optional `save_path`)
+- `cyberedu_start_training_service` - Start training deployment (lab instance)
+- `cyberedu_get_training_service_status` - Check deployment status
+- `cyberedu_extend_training_service` - Extend deployment time
+- `cyberedu_restart_training_service` - Restart deployment
 
 ### Contest Tools
 - `cyberedu_list_contests` - List all available contests
@@ -360,13 +375,33 @@ Example prompts for interacting with the CyberEdu MCP server:
 "Submit flag 'FLAG{solved}' for contest challenge"
 ```
 
-### Workflow Example
+### Trainings (Structured Courses)
+```
+"List trainings for current tenant"
+"Get full details for training 'heapvault-training'"
+"Subscribe me to this training"
+"Download training files to ./downloads/"
+"Start the training deployment and check its status"
+"Extend the training service time"
+```
+
+### Workflow Example (Challenges)
 ```
 1. "List easy web challenges from tenant rocsc"
 2. "Subscribe to 'why-xor' and start the service"
 3. "Download the challenge files"
 4. [Solve...]
 5. "Submit flag 'CTF{xor-is-not-safe}'"
+```
+
+### Workflow Example (Trainings)
+```
+1. "List trainings for tenant unbreakable"
+2. "Get details for training 'heapvault-training'"
+3. "Subscribe to this training"
+4. "Download the module files" (or "Start the training deployment")
+5. [Work through modules...]
+6. "Extend the training service" (if deployment is running)
 ```
 
 ## Architecture

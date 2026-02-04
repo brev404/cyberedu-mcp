@@ -91,8 +91,9 @@ Session credentials are persisted to `~/.cyberedu-mcp/session.json` after first 
 | Session Management | `get_session_status`, `set_session_cookie`, `switch_tenant` |
 | Authentication | `check_auth`, `list_tenants`, `get_user_info` |
 | Challenges | `list_challenges`, `get_challenge`, `subscribe_to_challenge` |
+| Trainings | `list_trainings`, `get_training`, `subscribe_to_training`, `start_training_service` |
 | Flags | `get_flag`, `submit_flag` |
-| Files | `download_file`, `download_contest_file` |
+| Files | `download_file`, `download_contest_file`, `download_training_file` |
 | Services | `start_service`, `get_service_status`, `extend_service` |
 | Contests | `list_contests`, `get_contest`, `get_contest_ranks` |
 
