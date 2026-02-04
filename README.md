@@ -321,6 +321,7 @@ Same flow as challenges: list → get details → subscribe → download → dep
 - `cyberedu_download_training_file` - Download training/module files (use optional `save_path`)
 - `cyberedu_start_training_service` - Start training deployment (lab instance)
 - `cyberedu_get_training_service_status` - Check deployment status
+- `cyberedu_wait_for_training_service` - Poll until deployment is ready
 - `cyberedu_extend_training_service` - Extend deployment time
 - `cyberedu_restart_training_service` - Restart deployment
 

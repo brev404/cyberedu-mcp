@@ -11,8 +11,8 @@ from .server import main, server
 from .tool_registry import ToolRegistry, MethodMetadata
 
 __all__ = [
-    'server',
-    'ToolRegistry',
-    'MethodMetadata',
-    'main',
+    "server",
+    "ToolRegistry",
+    "MethodMetadata",
+    "main",
 ]

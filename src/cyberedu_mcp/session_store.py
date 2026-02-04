@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+
 # Default location for session storage
 # Path.home() works cross-platform:
 # - Unix/macOS: /home/user or /Users/user
@@ -30,37 +31,37 @@ DEFAULT_SESSION_FILE = _get_session_file()
 class SessionStore:
     """
     Manages persistent session storage for the CyberEdu MCP server.
-    
+
     Session state is saved to disk and loaded on startup, allowing the
     session cookie and tenant selection to persist across MCP sessions.
     """
-    
+
     def __init__(self, session_file: Optional[Path] = None):
         """
         Initialize the session store.
-        
+
         Args:
             session_file: Optional custom path for session file.
                          Defaults to ~/.cyberedu-mcp/session.json
         """
         self.session_file = session_file or _get_session_file()
         self._ensure_dir()
-    
+
     def _ensure_dir(self) -> None:
         """Ensure the session directory exists."""
         self.session_file.parent.mkdir(parents=True, exist_ok=True)
-    
+
     def load(self) -> Dict[str, Any]:
         """
         Load session state from disk.
-        
+
         Returns:
             Dict with session state (session_cookie, tenant, etc.)
             Returns empty dict if file doesn't exist or is invalid.
         """
         if not self.session_file.exists():
             return {}
-        
+
         try:
             with open(self.session_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -71,14 +72,14 @@ class SessionStore:
         except (json.JSONDecodeError, IOError, OSError):
             # Return empty state on any read/parse error
             return {}
-    
+
     def save(self, state: Dict[str, Any]) -> bool:
         """
         Save session state to disk.
-        
+
         Args:
             state: Dict with session state to persist
-            
+
         Returns:
             True if save was successful, False otherwise
         """
@@ -93,11 +94,11 @@ class SessionStore:
             return True
         except (IOError, OSError):
             return False
-    
+
     def clear(self) -> bool:
         """
         Clear stored session (delete session file).
-        
+
         Returns:
             True if cleared successfully, False otherwise
         """
@@ -107,24 +108,24 @@ class SessionStore:
             return True
         except OSError:
             return False
-    
+
     def get_session_cookie(self) -> Optional[str]:
         """Get stored session cookie, or None if not set."""
         state = self.load()
         return state.get("session_cookie")
-    
+
     def get_tenant(self) -> str:
         """Get stored tenant, defaults to 'cyberedu'."""
         state = self.load()
         return state.get("tenant", "cyberedu")
-    
+
     def update(self, **kwargs) -> bool:
         """
         Update specific fields in the session state.
-        
+
         Args:
             **kwargs: Fields to update (session_cookie, tenant, etc.)
-            
+
         Returns:
             True if update was successful
         """

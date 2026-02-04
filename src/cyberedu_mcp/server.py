@@ -33,7 +33,6 @@ except ImportError:
 from .tool_registry import ToolRegistry
 from .session_store import get_session_store
 
-
 # =============================================================================
 # MCP Server Instructions
 # =============================================================================
@@ -87,7 +86,8 @@ list → get details → subscribe → download → deployment. Tenant applies: 
    Use training_id (UUID), not slug.
 5. `cyberedu_start_training_service` - Start the training deployment (lab instance)
 6. `cyberedu_get_training_service_status` - Check deployment status
-7. `cyberedu_extend_training_service` / `cyberedu_restart_training_service` - Manage deployment
+7. `cyberedu_wait_for_training_service` - Poll until deployment is ready (optional convenience)
+8. `cyberedu_extend_training_service` / `cyberedu_restart_training_service` - Manage deployment
 
 If a module has a challenge_id (in its deployment/challenge field), use cyberedu_start_service
 with that challenge_id for module-level lab instances.
@@ -144,7 +144,7 @@ _session_state = {
 def get_client(require_auth: bool = True) -> CyberEduClient:
     """Get or create the CyberEduClient instance."""
     global _client
-    
+
     # Reload session from disk to ensure we use latest persisted tenant/cookie
     stored = _session_store.load()
     if stored:
@@ -152,16 +152,16 @@ def get_client(require_auth: bool = True) -> CyberEduClient:
             _session_state["session_cookie"] = stored["session_cookie"]
         if "tenant" in stored:
             _session_state["tenant"] = stored["tenant"]
-    
+
     session_cookie = _session_state.get("session_cookie")
     tenant = _session_state.get("tenant", "cyberedu")
-    
+
     # Check if we need to recreate the client (tenant or cookie changed)
     if _client is not None:
         if _client.tenant != tenant or _client.session_cookie != session_cookie:
             _client.close()
             _client = None
-    
+
     if _client is None:
         if require_auth and not session_cookie:
             raise ValueError(
@@ -169,98 +169,92 @@ def get_client(require_auth: bool = True) -> CyberEduClient:
                 "Get it from your browser's developer tools after logging in to "
                 "https://app.cyber-edu.co and copy the 'cyberedu_session' cookie value."
             )
-        
-        _client = CyberEduClient(
-            tenant=tenant,
-            session_cookie=session_cookie or ""
-        )
-    
+
+        _client = CyberEduClient(tenant=tenant, session_cookie=session_cookie or "")
+
     return _client
 
 
 def set_session_cookie(session_cookie: str) -> Dict[str, Any]:
     """
     Set the session cookie for authentication.
-    
+
     This allows you to authenticate without restarting the MCP server.
     The cookie is persisted to disk (~/.cyberedu-mcp/session.json) and will
     be automatically loaded in future sessions.
-    
+
     Get your session cookie from browser developer tools after logging in
     to https://app.cyber-edu.co (look for the 'cyberedu_session' cookie).
-    
+
     Args:
         session_cookie: The cyberedu_session cookie value from your browser
-        
+
     Returns:
         Status message indicating success
     """
     global _client
-    
+
     _session_state["session_cookie"] = session_cookie
-    
+
     # Persist to disk for future sessions
-    _session_store.update(
-        session_cookie=session_cookie,
-        tenant=_session_state["tenant"]
-    )
-    
+    _session_store.update(session_cookie=session_cookie, tenant=_session_state["tenant"])
+
     # Reset client so it will be recreated with new cookie
     if _client is not None:
         _client.close()
         _client = None
-    
+
     return {
         "status": "success",
         "message": "Session cookie updated and persisted to disk. You can now use CyberEdu API tools.",
         "tenant": _session_state["tenant"],
-        "persisted": True
+        "persisted": True,
     }
 
 
 def switch_tenant(tenant: str) -> Dict[str, Any]:
     """
     Switch to a different tenant.
-    
+
     Use this to change which tenant/organization you're working with.
     The tenant selection is persisted to disk for future sessions.
     You can list available tenants using 'cyberedu_list_tenants'.
-    
+
     Args:
         tenant: The tenant slug/identifier to switch to (e.g., 'cyberedu', 'myorg')
-        
+
     Returns:
         Status message indicating the tenant switch
     """
     global _client
-    
+
     old_tenant = _session_state["tenant"]
     _session_state["tenant"] = tenant
-    
+
     # Persist to disk for future sessions
     _session_store.update(tenant=tenant)
-    
+
     # Reset client so it will be recreated with new tenant
     if _client is not None:
         _client.close()
         _client = None
-    
+
     return {
         "status": "success",
         "message": f"Switched tenant from '{old_tenant}' to '{tenant}'",
         "previous_tenant": old_tenant,
         "current_tenant": tenant,
-        "persisted": True
+        "persisted": True,
     }
 
 
 def get_session_status() -> Dict[str, Any]:
     """
     Get current session status.
-    
+
     Shows whether you're authenticated, which tenant is selected, and
     whether credentials are persisted to disk.
-    
+
     Returns:
         Current session status including authentication state, tenant, and persistence info
     """
@@ -271,49 +265,58 @@ def get_session_status() -> Dict[str, Any]:
             _session_state["session_cookie"] = stored["session_cookie"]
         if "tenant" in stored:
             _session_state["tenant"] = stored["tenant"]
-    
+
     has_cookie = bool(_session_state.get("session_cookie"))
     tenant = _session_state.get("tenant", "cyberedu")
     has_persisted_cookie = bool(stored.get("session_cookie"))
-    
+
     return {
         "authenticated": has_cookie,
         "tenant": tenant,
         "persisted": has_persisted_cookie,
         "session_file": str(_session_store.session_file),
-        "message": "Authenticated" if has_cookie else "Not authenticated. Use 'cyberedu_set_session_cookie' to authenticate."
+        "message": (
+            "Authenticated"
+            if has_cookie
+            else "Not authenticated. Use 'cyberedu_set_session_cookie' to authenticate."
+        ),
     }
 
 
 def clear_session() -> Dict[str, Any]:
     """
     Clear stored session credentials from disk.
-    
+
     This removes the persisted session cookie and tenant from disk.
     The current in-memory session remains active until the MCP server restarts.
     Use this when you want to remove stored credentials for security.
-    
+
     Returns:
         Status message indicating success
     """
     global _client
-    
+
     success = _session_store.clear()
-    
+
     # Also clear in-memory state
     _session_state["session_cookie"] = None
     _session_state["tenant"] = "cyberedu"
-    
+
     # Reset client
     if _client is not None:
         _client.close()
         _client = None
-    
+
     return {
         "status": "success" if success else "error",
-        "message": "Session credentials cleared from disk and memory." if success else "Failed to clear session file.",
-        "session_file": str(_session_store.session_file)
+        "message": (
+            "Session credentials cleared from disk and memory."
+            if success
+            else "Failed to clear session file."
+        ),
+        "session_file": str(_session_store.session_file),
     }
+
 
 # =============================================================================
 # Custom MCP Tools with Enhanced Descriptions
@@ -330,11 +333,7 @@ CUSTOM_TOOLS = {
             "If authenticated=false, use cyberedu_set_session_cookie (user provides cookie from browser). "
             "If API calls return 401/403 later, session expired - ask user for new cookie, then set_session_cookie."
         ),
-        "parameters": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        "parameters": {"type": "object", "properties": {}, "required": []},
     },
     "set_session_cookie": {
         "function": set_session_cookie,
@@ -349,11 +348,11 @@ CUSTOM_TOOLS = {
             "properties": {
                 "session_cookie": {
                     "type": "string",
-                    "description": "The cyberedu_session cookie value from browser dev tools after logging into https://app.cyber-edu.co"
+                    "description": "The cyberedu_session cookie value from browser dev tools after logging into https://app.cyber-edu.co",
                 }
             },
-            "required": ["session_cookie"]
-        }
+            "required": ["session_cookie"],
+        },
     },
     "switch_tenant": {
         "function": switch_tenant,
@@ -367,11 +366,11 @@ CUSTOM_TOOLS = {
             "properties": {
                 "tenant": {
                     "type": "string",
-                    "description": "The tenant slug/identifier (e.g., 'cyberedu', 'myorg'). Get available slugs from list_tenants."
+                    "description": "The tenant slug/identifier (e.g., 'cyberedu', 'myorg'). Get available slugs from list_tenants.",
                 }
             },
-            "required": ["tenant"]
-        }
+            "required": ["tenant"],
+        },
     },
     "clear_session": {
         "function": clear_session,
@@ -380,12 +379,8 @@ CUSTOM_TOOLS = {
             "Use this to remove persisted authentication for security. "
             "After clearing, you'll need to re-authenticate with 'cyberedu_set_session_cookie'."
         ),
-        "parameters": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    }
+        "parameters": {"type": "object", "properties": {}, "required": []},
+    },
 }
 
 
@@ -397,54 +392,56 @@ registry.discover_from_class(CyberEduClient, prefix="")
 async def handle_list_tools() -> List[Tool]:
     """
     List all available tools (discovered from CyberEduClient methods + custom tools).
-    
+
     Returns:
         List of Tool objects
     """
     tools = []
-    
+
     # Add custom tools first (session management)
     for name, tool_info in CUSTOM_TOOLS.items():
         tool = Tool(
             name=f"cyberedu_{name}",
             description=tool_info["description"],
-            inputSchema=tool_info["parameters"]
+            inputSchema=tool_info["parameters"],
         )
         tools.append(tool)
-    
+
     # Add discovered tools from CyberEduClient
     for metadata in registry.list_methods():
         tool = Tool(
             name=f"cyberedu_{metadata.name}",
             description=metadata.description,
-            inputSchema=metadata.parameters
+            inputSchema=metadata.parameters,
         )
         tools.append(tool)
-    
+
     return tools
 
 
 @server.call_tool()
-async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]] = None) -> List[TextContent]:
+async def handle_call_tool(
+    name: str, arguments: Optional[Dict[str, Any]] = None
+) -> List[TextContent]:
     """
     Call a tool by name with the provided arguments.
-    
+
     Args:
         name: Tool name (prefixed with 'cyberedu_')
         arguments: Tool arguments (optional, defaults to empty dict)
-        
+
     Returns:
         List of TextContent with the result
     """
     if arguments is None:
         arguments = {}
-    
+
     # Remove prefix
     if name.startswith("cyberedu_"):
-        method_name = name[len("cyberedu_"):]
+        method_name = name[len("cyberedu_") :]
     else:
         method_name = name
-    
+
     try:
         # Check if it's a custom tool first
         if method_name in CUSTOM_TOOLS:
@@ -452,49 +449,60 @@ async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]] = None
             result = custom_func(**arguments)
             result_str = json.dumps(result, indent=2, default=str)
             return [TextContent(type="text", text=result_str)]
-        
+
         # Check if it's a discovered method from CyberEduClient
         metadata = registry.get_method(method_name)
         if not metadata:
             available = list(CUSTOM_TOOLS.keys()) + [m.name for m in registry.list_methods()]
-            raise ValueError(f"Tool {name} not found. Available tools: {['cyberedu_' + t for t in available]}")
-        
+            raise ValueError(
+                f"Tool {name} not found. Available tools: {['cyberedu_' + t for t in available]}"
+            )
+
         # Get client instance (this will fail gracefully if not authenticated)
         client = get_client()
-        
+
         # Get the method from the instance (bound method)
         instance_method = getattr(client, method_name)
         result = instance_method(**arguments)
-        
+
         # Convert result to JSON string
         if isinstance(result, bytes):
             # For file downloads returned as bytes (no save_path specified)
-            result_str = json.dumps({
-                "type": "file_download",
-                "size_bytes": len(result),
-                "message": "File downloaded successfully. Use the 'save_path' parameter to save directly to disk."
-            }, indent=2)
+            result_str = json.dumps(
+                {
+                    "type": "file_download",
+                    "size_bytes": len(result),
+                    "message": "File downloaded successfully. Use the 'save_path' parameter to save directly to disk.",
+                },
+                indent=2,
+            )
         elif isinstance(result, dict) and result.get("success") and "path" in result:
             # For file downloads saved to disk (save_path was specified)
-            result_str = json.dumps({
-                "type": "file_saved",
-                "path": result["path"],
-                "size_bytes": result.get("size", 0),
-                "message": f"File saved successfully to: {result['path']}"
-            }, indent=2)
+            result_str = json.dumps(
+                {
+                    "type": "file_saved",
+                    "path": result["path"],
+                    "size_bytes": result.get("size", 0),
+                    "message": f"File saved successfully to: {result['path']}",
+                },
+                indent=2,
+            )
         else:
             result_str = json.dumps(result, indent=2, default=str)
-        
+
         return [TextContent(type="text", text=result_str)]
-    
+
     except httpx.HTTPStatusError as e:
         status = e.response.status_code
-        error_msg = {
+        error_msg: Dict[str, Any] = {
             "error": "HTTP Error",
             "status_code": status,
             "message": str(e),
-            "response": e.response.text[:500] if e.response.text else None
         }
+        # Do not include API response body for auth errors (401/403) to avoid
+        # leaking any sensitive info the API might return
+        if status not in (401, 403) and e.response.text:
+            error_msg["response"] = e.response.text[:500]
         if status in (401, 403):
             error_msg["session_expired"] = True
             error_msg["remedy"] = (
@@ -502,35 +510,20 @@ async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]] = None
                 "get cyberedu_session cookie from Developer Tools > Application > Cookies, "
                 "then call cyberedu_set_session_cookie with the new value."
             )
-        return [TextContent(
-            type="text",
-            text=json.dumps(error_msg, indent=2)
-        )]
-    
+        return [TextContent(type="text", text=json.dumps(error_msg, indent=2))]
+
     except ValueError as e:
         msg = str(e)
-        error_msg = {
-            "error": "ValueError",
-            "message": msg
-        }
+        error_msg = {"error": "ValueError", "message": msg}
         if "not authenticated" in msg.lower() or "session" in msg.lower():
             error_msg["remedy"] = (
                 "Ask user for cyberedu_session cookie from https://app.cyber-edu.co "
                 "(Developer Tools > Application > Cookies), then call cyberedu_set_session_cookie."
             )
-        return [TextContent(
-            type="text",
-            text=json.dumps(error_msg, indent=2)
-        )]
+        return [TextContent(type="text", text=json.dumps(error_msg, indent=2))]
     except Exception as e:
-        error_msg = {
-            "error": type(e).__name__,
-            "message": str(e)
-        }
-        return [TextContent(
-            type="text",
-            text=json.dumps(error_msg, indent=2)
-        )]
+        error_msg = {"error": type(e).__name__, "message": str(e)}
+        return [TextContent(type="text", text=json.dumps(error_msg, indent=2))]
 
 
 async def main():
@@ -538,13 +531,10 @@ async def main():
     init_options = server.create_initialization_options()
     init_options = init_options.model_copy(update={"instructions": SERVER_INSTRUCTIONS.strip()})
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            init_options
-        )
+        await server.run(read_stream, write_stream, init_options)
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
