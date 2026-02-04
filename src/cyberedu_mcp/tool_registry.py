@@ -262,6 +262,8 @@ class ToolRegistry:
         """Determine category based on method name."""
         if 'auth' in method_name or 'user' in method_name or 'tenant' in method_name:
             return 'authentication'
+        elif 'training' in method_name:
+            return 'trainings'
         elif 'contest' in method_name:
             return 'contests'
         elif 'challenge' in method_name:
