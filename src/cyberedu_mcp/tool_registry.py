@@ -59,13 +59,8 @@ class ToolRegistry:
         """
         methods = []
 
-        for method_name, method in inspect.getmembers(
-            cls, predicate=inspect.isfunction
-        ):
-            if (
-                method_name in self._excluded_methods
-                or method_name.startswith("_")
-            ):
+        for method_name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            if method_name in self._excluded_methods or method_name.startswith("_"):
                 continue
 
             method_signature = inspect.signature(method)
@@ -75,9 +70,7 @@ class ToolRegistry:
             except Exception:
                 type_hints = {}
 
-            parameter_descriptions = self._extract_param_descriptions(
-                method.__doc__
-            )
+            parameter_descriptions = self._extract_param_descriptions(method.__doc__)
             parameter_schema = self._build_parameter_schema(
                 method_signature, type_hints, parameter_descriptions
             )
