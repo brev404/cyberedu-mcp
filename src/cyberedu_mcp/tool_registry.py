@@ -59,44 +59,44 @@ class ToolRegistry:
         """
         methods = []
 
-        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
-            # Skip excluded methods
-            if name in self._excluded_methods or name.startswith("_"):
+        for method_name, method in inspect.getmembers(
+            cls, predicate=inspect.isfunction
+        ):
+            if (
+                method_name in self._excluded_methods
+                or method_name.startswith("_")
+            ):
                 continue
 
-            # Get method signature
-            sig = inspect.signature(method)
+            method_signature = inspect.signature(method)
 
-            # Get type hints
             try:
-                hints = get_type_hints(method)
+                type_hints = get_type_hints(method)
             except Exception:
-                hints = {}
+                type_hints = {}
 
-            # Extract parameter descriptions from docstring
-            param_descriptions = self._extract_param_descriptions(method.__doc__)
+            parameter_descriptions = self._extract_param_descriptions(
+                method.__doc__
+            )
+            parameter_schema = self._build_parameter_schema(
+                method_signature, type_hints, parameter_descriptions
+            )
 
-            # Build parameter schema with docstring descriptions
-            parameters = self._build_parameter_schema(sig, hints, param_descriptions)
-
-            # Get description from docstring
             description = self._extract_description(method.__doc__)
+            tool_category = self._determine_category(method_name)
 
-            # Determine category from method name
-            category = self._determine_category(name)
-
-            full_name = f"{prefix}{name}" if prefix else name
+            registered_name = f"{prefix}{method_name}" if prefix else method_name
 
             metadata = MethodMetadata(
-                name=full_name,
+                name=registered_name,
                 method=method,
                 description=description,
-                parameters=parameters,
-                category=category,
+                parameters=parameter_schema,
+                category=tool_category,
             )
 
             methods.append(metadata)
-            self._methods[full_name] = metadata
+            self._methods[registered_name] = metadata
 
         return methods
 
@@ -146,7 +146,7 @@ class ToolRegistry:
             if hasattr(origin, "__name__") and origin.__name__ in ("Union", "_UnionGenericAlias"):
                 # This is Optional[Something] or Union, get the actual type
                 args = getattr(param_type, "__args__", [])
-                # Filter out NoneType
+                # Filter out NoneType from Union (e.g. Optional[str] -> [str, NoneType])
                 non_none_args = [arg for arg in args if arg is not type(None)]
                 if non_none_args:
                     param_type = non_none_args[0]
