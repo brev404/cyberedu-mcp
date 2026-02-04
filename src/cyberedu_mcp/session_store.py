@@ -17,8 +17,14 @@ from typing import Any, Dict, Optional
 # Path.home() works cross-platform:
 # - Unix/macOS: /home/user or /Users/user
 # - Windows: C:\\Users\\username
-DEFAULT_SESSION_DIR = Path.home() / ".cyberedu-mcp"
-DEFAULT_SESSION_FILE = DEFAULT_SESSION_DIR / "session.json"
+# Override with CYBEREDU_SESSION_FILE env var if needed (e.g. for MCP sandbox)
+def _get_session_file() -> Path:
+    if path := os.environ.get("CYBEREDU_SESSION_FILE"):
+        return Path(path)
+    return Path.home() / ".cyberedu-mcp" / "session.json"
+
+
+DEFAULT_SESSION_FILE = _get_session_file()
 
 
 class SessionStore:
@@ -37,7 +43,7 @@ class SessionStore:
             session_file: Optional custom path for session file.
                          Defaults to ~/.cyberedu-mcp/session.json
         """
-        self.session_file = session_file or DEFAULT_SESSION_FILE
+        self.session_file = session_file or _get_session_file()
         self._ensure_dir()
     
     def _ensure_dir(self) -> None:
