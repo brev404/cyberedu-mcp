@@ -39,3 +39,8 @@ line-length = 100
 
 [tool.ruff]
 line-length = 100
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src", "cyberedu-client/src"]

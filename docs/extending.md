@@ -255,6 +255,8 @@ asyncio.run(test())
 
 ## Checklist for New Tools
 
+Compliance tests in `tests/test_compliance.py` verify these items. See `tests/COMPLIANCE_MAPPING.md`.
+
 - [ ] Method has docstring with Args/Returns
 - [ ] Type hints on all parameters
 - [ ] Description is detailed and includes examples

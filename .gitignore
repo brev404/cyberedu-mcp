@@ -1,3 +1,5 @@
 __pycache__/
 .env
 venv
+.pytest_cache/
+tests/test_output_download.txt
