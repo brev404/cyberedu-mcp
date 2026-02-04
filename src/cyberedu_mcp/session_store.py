@@ -19,13 +19,12 @@ from typing import Any, Dict, Optional
 # - Unix/macOS: /home/user or /Users/user
 # - Windows: C:\\Users\\username
 # Override with CYBEREDU_SESSION_FILE env var if needed (e.g. for MCP sandbox)
-def _get_session_file() -> Path:
-    if path := os.environ.get("CYBEREDU_SESSION_FILE"):
-        return Path(path)
+def _resolve_session_file_path() -> Path:
+    """Resolve session file path from env or default location."""
+    env_path = os.environ.get("CYBEREDU_SESSION_FILE")
+    if env_path:
+        return Path(env_path)
     return Path.home() / ".cyberedu-mcp" / "session.json"
-
-
-DEFAULT_SESSION_FILE = _get_session_file()
 
 
 class SessionStore:
@@ -44,11 +43,11 @@ class SessionStore:
             session_file: Optional custom path for session file.
                          Defaults to ~/.cyberedu-mcp/session.json
         """
-        self.session_file = session_file or _get_session_file()
-        self._ensure_dir()
+        self.session_file = session_file or _resolve_session_file_path()
+        self._ensure_session_directory_exists()
 
-    def _ensure_dir(self) -> None:
-        """Ensure the session directory exists."""
+    def _ensure_session_directory_exists(self) -> None:
+        """Ensure the parent directory for the session file exists."""
         self.session_file.parent.mkdir(parents=True, exist_ok=True)
 
     def load(self) -> Dict[str, Any]:
@@ -63,14 +62,12 @@ class SessionStore:
             return {}
 
         try:
-            with open(self.session_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Validate it's a dict
-                if isinstance(data, dict):
-                    return data
+            with open(self.session_file, "r", encoding="utf-8") as session_file_handle:
+                session_data = json.load(session_file_handle)
+                if isinstance(session_data, dict):
+                    return session_data
                 return {}
         except (json.JSONDecodeError, IOError, OSError):
-            # Return empty state on any read/parse error
             return {}
 
     def save(self, state: Dict[str, Any]) -> bool:
@@ -84,9 +81,9 @@ class SessionStore:
             True if save was successful, False otherwise
         """
         try:
-            self._ensure_dir()
-            with open(self.session_file, "w", encoding="utf-8") as f:
-                json.dump(state, f, indent=2)
+            self._ensure_session_directory_exists()
+            with open(self.session_file, "w", encoding="utf-8") as session_file_handle:
+                json.dump(state, session_file_handle, indent=2)
             # Set restrictive permissions (owner read/write only) for security
             # On Windows, os.chmod only supports read-only flag, so we skip it
             if sys.platform != "win32":
@@ -111,13 +108,13 @@ class SessionStore:
 
     def get_session_cookie(self) -> Optional[str]:
         """Get stored session cookie, or None if not set."""
-        state = self.load()
-        return state.get("session_cookie")
+        loaded_session = self.load()
+        return loaded_session.get("session_cookie")
 
     def get_tenant(self) -> str:
         """Get stored tenant, defaults to 'cyberedu'."""
-        state = self.load()
-        return state.get("tenant", "cyberedu")
+        loaded_session = self.load()
+        return loaded_session.get("tenant", "cyberedu")
 
     def update(self, **kwargs) -> bool:
         """
@@ -129,18 +126,17 @@ class SessionStore:
         Returns:
             True if update was successful
         """
-        state = self.load()
-        state.update(kwargs)
-        return self.save(state)
+        current_session = self.load()
+        current_session.update(kwargs)
+        return self.save(current_session)
 
 
-# Global session store instance
-_store: Optional[SessionStore] = None
+_session_store_instance: Optional[SessionStore] = None
 
 
 def get_session_store() -> SessionStore:
     """Get or create the global session store instance."""
-    global _store
-    if _store is None:
-        _store = SessionStore()
-    return _store
+    global _session_store_instance
+    if _session_store_instance is None:
+        _session_store_instance = SessionStore()
+    return _session_store_instance

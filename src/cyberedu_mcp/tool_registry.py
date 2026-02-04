@@ -32,10 +32,13 @@ class ToolRegistry:
     def __init__(self):
         self._methods: Dict[str, MethodMetadata] = {}
         self._excluded_methods = {
-            "_get_headers",
+            "_build_request_headers",
             "_make_request",
-            "_extract_download_uuid",
-            "_handle_flag_submission_response",
+            "_parse_download_uuid_from_response",
+            "_parse_flag_submission_response",
+            "_extract_filename_from_content_disposition",
+            "_resolve_save_path",
+            "_write_file_to_disk",
             "_save_downloaded_file",
             "set_session_cookie",
             "close",
